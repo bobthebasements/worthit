@@ -2,82 +2,53 @@
 
 import { useMemo, useState } from 'react'
 
-const ITEMS = {
-  'iPhone 15': { base: 410, range: [365, 455], storage: { '128GB': 0, '256GB': 45, '512GB': 105 }, battery: { '90%+': 0, '80–89%': -28, 'Below 80%': -65 } },
-  'iPhone 13': { base: 285, range: [245, 325], storage: { '128GB': 0, '256GB': 35, '512GB': 70 }, battery: { '90%+': 0, '80–89%': -20, 'Below 80%': -50 } },
-  'PlayStation 5': { base: 365, range: [315, 405], storage: { 'Disc edition': 0, 'Digital edition': -55 }, battery: {}, },
-  'MacBook Air M2': { base: 650, range: [570, 740], storage: { '256GB': 0, '512GB': 85 }, battery: {}, },
-  'AirPods Pro 2': { base: 135, range: [105, 160], storage: { 'USB-C case': 0, 'Lightning case': -12 }, battery: {}, },
-}
+const devices = [
+  ...[
+    ['Apple','iPhone 8','Phone',95],['Apple','iPhone 8 Plus','Phone',115],['Apple','iPhone X','Phone',130],['Apple','iPhone XR','Phone',150],['Apple','iPhone XS','Phone',165],['Apple','iPhone XS Max','Phone',190],['Apple','iPhone 11','Phone',205],['Apple','iPhone 11 Pro','Phone',250],['Apple','iPhone 11 Pro Max','Phone',285],['Apple','iPhone 12','Phone',245],['Apple','iPhone 12 mini','Phone',205],['Apple','iPhone 12 Pro','Phone',295],['Apple','iPhone 12 Pro Max','Phone',335],['Apple','iPhone 13','Phone',310],['Apple','iPhone 13 mini','Phone',275],['Apple','iPhone 13 Pro','Phone',390],['Apple','iPhone 13 Pro Max','Phone',455],['Apple','iPhone 14','Phone',350],['Apple','iPhone 14 Plus','Phone',390],['Apple','iPhone 14 Pro','Phone',475],['Apple','iPhone 14 Pro Max','Phone',545],['Apple','iPhone 15','Phone',430],['Apple','iPhone 15 Plus','Phone',465],['Apple','iPhone 15 Pro','Phone',565],['Apple','iPhone 15 Pro Max','Phone',650],['Apple','iPhone 16','Phone',510],['Apple','iPhone 16 Plus','Phone',545],['Apple','iPhone 16 Pro','Phone',650],['Apple','iPhone 16 Pro Max','Phone',745],['Apple','iPhone 17','Phone',610],['Apple','iPhone 17 Pro','Phone',755],['Apple','iPhone 17 Pro Max','Phone',895],
+    ['Samsung','Galaxy S20','Phone',170],['Samsung','Galaxy S20+','Phone',190],['Samsung','Galaxy S20 Ultra','Phone',235],['Samsung','Galaxy S21','Phone',210],['Samsung','Galaxy S21 Ultra','Phone',285],['Samsung','Galaxy S22','Phone',245],['Samsung','Galaxy S22 Ultra','Phone',335],['Samsung','Galaxy S23','Phone',330],['Samsung','Galaxy S23+','Phone',375],['Samsung','Galaxy S23 Ultra','Phone',465],['Samsung','Galaxy S24','Phone',420],['Samsung','Galaxy S24+','Phone',470],['Samsung','Galaxy S24 Ultra','Phone',585],['Samsung','Galaxy S25','Phone',500],['Samsung','Galaxy S25 Ultra','Phone',690],['Samsung','Galaxy Z Flip 5','Phone',390],['Samsung','Galaxy Z Flip 6','Phone',500],['Samsung','Galaxy Z Fold 5','Phone',720],['Samsung','Galaxy Z Fold 6','Phone',850],
+    ['Google','Pixel 6','Phone',190],['Google','Pixel 6 Pro','Phone',235],['Google','Pixel 7','Phone',235],['Google','Pixel 7 Pro','Phone',305],['Google','Pixel 8','Phone',330],['Google','Pixel 8 Pro','Phone',420],['Google','Pixel 9','Phone',450],['Google','Pixel 9 Pro','Phone',560],['Google','Pixel 9 Pro XL','Phone',625],['Google','Pixel 10','Phone',520],['Google','Pixel 10 Pro','Phone',650],
+  ].map(([brand,name,category,median])=>({brand,name,category,median})),
+  ...[
+    ['Apple','iPad 9th gen','Tablet',210],['Apple','iPad 10th gen','Tablet',300],['Apple','iPad Air 4','Tablet',285],['Apple','iPad Air 5','Tablet',370],['Apple','iPad Air M2','Tablet',520],['Apple','iPad mini 6','Tablet',330],['Apple','iPad Pro 11 M1','Tablet',480],['Apple','iPad Pro 11 M2','Tablet',570],['Apple','iPad Pro 11 M4','Tablet',720],['Apple','iPad Pro 12.9 M1','Tablet',610],['Apple','iPad Pro 12.9 M2','Tablet',700],['Apple','iPad Pro 13 M4','Tablet',900],
+    ['Apple','MacBook Air M1','Laptop',430],['Apple','MacBook Air M2','Laptop',575],['Apple','MacBook Air M3','Laptop',700],['Apple','MacBook Air M4','Laptop',820],['Apple','MacBook Pro 13 M1','Laptop',520],['Apple','MacBook Pro 14 M1 Pro','Laptop',900],['Apple','MacBook Pro 14 M2 Pro','Laptop',1080],['Apple','MacBook Pro 14 M3 Pro','Laptop',1200],['Apple','MacBook Pro 14 M4 Pro','Laptop',1375],['Apple','MacBook Pro 16 M1 Pro','Laptop',1050],['Apple','MacBook Pro 16 M2 Pro','Laptop',1225],['Apple','MacBook Pro 16 M3 Pro','Laptop',1400],['Apple','MacBook Pro 16 M4 Pro','Laptop',1575],['Apple','Mac mini M1','Desktop',350],['Apple','Mac mini M2','Desktop',470],['Apple','Mac mini M4','Desktop',600],
+    ['Apple','Apple Watch Series 7','Wearable',150],['Apple','Apple Watch Series 8','Wearable',185],['Apple','Apple Watch Series 9','Wearable',225],['Apple','Apple Watch Ultra','Wearable',390],['Apple','Apple Watch Ultra 2','Wearable',510],['Apple','AirPods Pro 2 USB-C','Audio',145],['Apple','AirPods Max USB-C','Audio',390],
+  ].map(([brand,name,category,median])=>({brand,name,category,median})),
+  ...[
+    ['Sony','PlayStation 4','Console',115],['Sony','PlayStation 4 Pro','Console',155],['Sony','PlayStation 5 Disc','Console',390],['Sony','PlayStation 5 Digital','Console',330],['Sony','PlayStation 5 Slim Disc','Console',425],['Sony','PlayStation 5 Pro','Console',600],['Microsoft','Xbox One S','Console',105],['Microsoft','Xbox One X','Console',145],['Microsoft','Xbox Series S','Console',190],['Microsoft','Xbox Series X','Console',330],['Nintendo','Switch','Console',175],['Nintendo','Switch Lite','Console',125],['Nintendo','Switch OLED','Console',225],['Nintendo','Switch 2','Console',390],['Valve','Steam Deck 64GB','Handheld',270],['Valve','Steam Deck 256GB','Handheld',330],['Valve','Steam Deck OLED 512GB','Handheld',450],['ASUS','ROG Ally','Handheld',390],['Lenovo','Legion Go','Handheld',430],
+  ].map(([brand,name,category,median])=>({brand,name,category,median})),
+  ...[
+    ['NVIDIA','RTX 3060 12GB','GPU',190],['NVIDIA','RTX 3060 Ti','GPU',235],['NVIDIA','RTX 3070','GPU',280],['NVIDIA','RTX 3080','GPU',370],['NVIDIA','RTX 3090','GPU',550],['NVIDIA','RTX 4060','GPU',230],['NVIDIA','RTX 4060 Ti','GPU',285],['NVIDIA','RTX 4070','GPU',400],['NVIDIA','RTX 4070 Super','GPU',475],['NVIDIA','RTX 4070 Ti Super','GPU',590],['NVIDIA','RTX 4080 Super','GPU',820],['NVIDIA','RTX 4090','GPU',1200],['AMD','RX 6600','GPU',145],['AMD','RX 6700 XT','GPU',220],['AMD','RX 6800 XT','GPU',330],['AMD','RX 7800 XT','GPU',390],['AMD','RX 7900 XT','GPU',520],['AMD','RX 7900 XTX','GPU',650],
+    ['Sony','A6400','Camera',520],['Sony','A7 III','Camera',950],['Sony','A7 IV','Camera',1500],['Sony','A7R IV','Camera',1350],['Canon','EOS R10','Camera',550],['Canon','EOS R6','Camera',1050],['Canon','EOS R6 Mark II','Camera',1500],['Fujifilm','X-T30 II','Camera',650],['Fujifilm','X-T5','Camera',1200],
+    ['Dell','U2720Q 27 4K','Monitor',250],['LG','27GP850 27 QHD','Monitor',260],['Samsung','Odyssey G7 32','Monitor',390],['LG','C2 42 OLED','TV',650],['LG','C3 48 OLED','TV',720],['Samsung','S90C 55 OLED','TV',700],
+  ].map(([brand,name,category,median])=>({brand,name,category,median}))
+]
 
-const CONDITIONS = { 'Like new': 1.08, 'Good': 1, 'Fair': .84, 'Heavily used': .68 }
+const categories=['All','Phone','Tablet','Laptop','Desktop','Wearable','Audio','Console','Handheld','GPU','Camera','Monitor','TV']
+const trendSeed=(i)=>({d7:((i*7)%19)-8,d30:((i*11)%27)-12,d90:((i*13)%35)-16,vol:3+(i*7)%18,demand:62+(i*17)%37,supply:35+(i*13)%48,sell:48+(i*19)%48,days:3+(i*11)%21})
+const market=devices.map((d,i)=>({...d,...trendSeed(i),buy:Math.round(d.median*0.72),list:Math.round(d.median*1.04),margin:Math.round(d.median*0.32),roi:Math.round((d.median*0.32/(d.median*0.72))*100)}))
 
-export default function Home() {
-  const [item, setItem] = useState('iPhone 15')
-  const [condition, setCondition] = useState('Good')
-  const [variant, setVariant] = useState('128GB')
-  const [battery, setBattery] = useState('90%+')
-  const [purchase, setPurchase] = useState('')
-  const [copied, setCopied] = useState(false)
+function money(n){return `£${Math.round(n).toLocaleString()}`}
+function movement(n){return `${n>=0?'+':''}${n}%`}
+function Bar({value}){return <div className="bar"><i style={{width:`${Math.min(100,value)}%`}}/></div>}
 
-  const data = ITEMS[item]
-  const value = useMemo(() => {
-    const modifier = (data.storage?.[variant] || 0) + (data.battery?.[battery] || 0)
-    return Math.max(35, Math.round((data.base + modifier) * CONDITIONS[condition]))
-  }, [data, variant, battery, condition])
-
-  const low = Math.round(value * .91)
-  const high = Math.round(value * 1.08)
-  const fee = Math.round(value * .13)
-  const profit = purchase ? value - fee - Number(purchase) : null
-  const trend = item === 'PlayStation 5' ? '-3.2%' : item === 'AirPods Pro 2' ? '+1.8%' : '+4.6%'
-
-  function changeItem(next) {
-    setItem(next)
-    const first = Object.keys(ITEMS[next].storage || {})[0]
-    if (first) setVariant(first)
-    if (!ITEMS[next].battery) setBattery('90%+')
-  }
-
-  return <main>
-    <nav className="nav"><div className="brand">worth<span>it</span></div><div className="nav-note">UK resale intelligence</div></nav>
-
-    <section className="hero">
-      <div className="eyebrow">THE SECOND-HAND MARKET, SIMPLIFIED</div>
-      <h1>What could your tech <em>sell for?</em></h1>
-      <p className="lede">Get a realistic UK resale estimate, see how the market is moving, and find a price worth listing at.</p>
-      <div className="searchbox"><span>⌕</span><select value={item} onChange={e => changeItem(e.target.value)}>{Object.keys(ITEMS).map(x => <option key={x}>{x}</option>)}</select><span className="search-hint">Try iPhone 15, PS5, MacBook…</span></div>
-      <div className="chips">{Object.keys(ITEMS).slice(0,4).map(x => <button key={x} onClick={() => changeItem(x)}>{x}</button>)}</div>
-    </section>
-
-    <section className="workspace">
-      <div className="config card">
-        <div className="section-label">01 / CONFIGURE</div>
-        <h2>Tell us about it</h2>
-        <p className="muted">Only details that meaningfully affect resale value.</p>
-        <label>Condition</label><div className="seg">{Object.keys(CONDITIONS).map(x => <button className={condition === x ? 'active' : ''} onClick={() => setCondition(x)} key={x}>{x}</button>)}</div>
-        {Object.keys(data.storage || {}).length > 0 && <><label>Model / storage</label><select className="field" value={variant} onChange={e => setVariant(e.target.value)}>{Object.keys(data.storage).map(x => <option key={x}>{x}</option>)}</select></>}
-        {Object.keys(data.battery || {}).length > 0 && <><label>Battery health</label><select className="field" value={battery} onChange={e => setBattery(e.target.value)}>{Object.keys(data.battery).map(x => <option key={x}>{x}</option>)}</select></>}
-      </div>
-
-      <div className="result card">
-        <div className="result-top"><div><div className="section-label">02 / ESTIMATED RESALE VALUE</div><div className="price">£{value}</div><div className="range">Typical range <strong>£{low}–£{high}</strong></div></div><div className="confidence"><span>●</span> High confidence</div></div>
-        <div className="market-line"><span>30-day market trend</span><strong>{trend}</strong></div>
-        <div className="chart"><div className="gridline g1"/><div className="gridline g2"/><svg viewBox="0 0 700 180" preserveAspectRatio="none"><polyline points="0,138 55,130 105,143 160,112 215,120 270,98 330,106 385,79 440,87 495,61 550,72 610,42 700,52" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></svg><div className="chart-labels"><span>30 days ago</span><span>Today</span></div></div>
-        <div className="signals"><div><span>Demand</span><b>Strong</b></div><div><span>Supply</span><b>Moderate</b></div><div><span>Volatility</span><b>Low</b></div></div>
-      </div>
-    </section>
-
-    <section className="compare card">
-      <div className="section-label">03 / WHERE TO SELL</div><h2>Price it for the market, not a guess.</h2>
-      <div className="market-grid"><div><span>eBay</span><strong>£{Math.round(value * 1.03)}</strong><small>Highest reach · fees apply</small></div><div><span>Vinted</span><strong>£{Math.round(value * .98)}</strong><small>Low seller fees · fast-moving</small></div><div><span>Facebook Marketplace</span><strong>£{Math.round(value * .94)}</strong><small>Local sale · no platform fee</small></div><div><span>Trade-in</span><strong>£{Math.round(value * .72)}</strong><small>Fastest · less money</small></div></div>
-    </section>
-
-    <section className="tools">
-      <div className="card calculator"><div className="section-label">04 / PROFIT CHECK</div><h2>What would you actually make?</h2><p className="muted">Enter what you paid. We’ll estimate the result after a typical marketplace fee.</p><input className="field" inputMode="decimal" placeholder="Purchase price £" value={purchase} onChange={e => setPurchase(e.target.value.replace(/[^0-9.]/g,''))}/>{profit !== null && <div className="profit"><span>Estimated profit</span><strong>£{profit}</strong><small>{Math.round((profit / Number(purchase)) * 100)}% ROI · based on eBay-style fees</small></div>}</div>
-      <div className="card listing"><div className="section-label">05 / READY TO LIST</div><h2>Recommended ask: £{Math.round(value * 1.05)}</h2><p>List slightly above the fair market price so you have room to negotiate.</p><div className="listing-box"><b>{item} — {condition}</b><span>Great condition and ready for its next owner. Message for any questions.</span></div><button className="copy" onClick={() => {navigator.clipboard?.writeText(`${item} — ${condition}\nGreat condition and ready for its next owner. Asking £${Math.round(value * 1.05)}.`);setCopied(true);setTimeout(()=>setCopied(false),1500)}}>{copied ? 'Copied ✓' : 'Copy listing'}</button></div>
-    </section>
-
-    <footer><span>worth<span>it</span></span><small>Market estimates are illustrative in this MVP. Live comparable-sale data will replace seeded data as the data layer is connected.</small></footer>
+export default function Home(){
+  const [tab,setTab]=useState('Overview'); const [cat,setCat]=useState('All'); const [query,setQuery]=useState(''); const [range,setRange]=useState('30D'); const [selected,setSelected]=useState(null)
+  const filtered=useMemo(()=>market.filter(d=>(cat==='All'||d.category===cat)&&`${d.brand} ${d.name}`.toLowerCase().includes(query.toLowerCase())),[cat,query])
+  const rising=[...filtered].sort((a,b)=>b.d30-a.d30).slice(0,8); const falling=[...filtered].sort((a,b)=>a.d30-b.d30).slice(0,8); const opportunities=[...filtered].sort((a,b)=>b.roi-a.roi).slice(0,10); const liquid=[...filtered].sort((a,b)=>b.sell-a.sell).slice(0,8)
+  return <main className="app">
+    <header className="top"><div className="brand"><span className="mark">W</span><div><strong>WorthIt</strong><small>RESELLER INTELLIGENCE</small></div></div><nav>{['Overview','Markets','Sourcing','Catalog'].map(x=><button className={tab===x?'active':''} onClick={()=>setTab(x)} key={x}>{x}</button>)}</nav><div className="status"><span/> DEMO MARKET DATA</div></header>
+    <section className="hero"><div><p className="eyebrow">SECOND-HAND MARKET TERMINAL</p><h1>Know what to buy.<br/><em>Know what to sell.</em></h1><p className="sub">Resale pricing, market movement, liquidity and sourcing margins across {market.length}+ devices.</p></div><div className="search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search model, brand or category…"/><kbd>⌘ K</kbd></div></section>
+    <section className="kpis"><Kpi label="MARKET INDEX" value="+4.8%" note="30D movement" up/><Kpi label="MEDIAN RESALE" value="£412" note="Across tracked catalog"/><Kpi label="AVG. SELL-THROUGH" value="71%" note="30 day estimate" up/><Kpi label="AVG. DAYS TO SELL" value="11.4d" note="All categories"/><Kpi label="ACTIVE MODELS" value={market.length+`+`} note="Seeded catalog"/></section>
+    <div className="toolbar"><div className="tabs">{categories.map(x=><button onClick={()=>setCat(x)} className={cat===x?'chosen':''} key={x}>{x}</button>)}</div><div className="ranges">{['7D','30D','90D','1Y'].map(x=><button className={range===x?'chosen':''} onClick={()=>setRange(x)} key={x}>{x}</button>)}</div></div>
+    {tab==='Sourcing' ? <section className="panel"><PanelTitle title="Sourcing opportunities" desc="Where a reseller's buy price leaves room for a realistic market margin."/><OpportunityTable rows={opportunities}/></section> : tab==='Catalog' ? <section className="panel"><PanelTitle title="Tracked catalog" desc={`${filtered.length} matching models across ${categories.length-1} categories.`}/><Catalog rows={filtered} onSelect={setSelected}/></section> : tab==='Markets' ? <><section className="grid2"><Trend title="Rising fastest" rows={rising}/><Trend title="Falling fastest" rows={falling}/></section><section className="panel"><PanelTitle title="Most liquid inventory" desc="Higher sell-through generally means faster capital recycling."/><Liquid rows={liquid}/></section></> : <><section className="grid2"><Trend title="Rising fastest" rows={rising}/><Trend title="Best sourcing margins" rows={opportunities.slice(0,8)} margin/></section><section className="panel"><PanelTitle title="Reseller opportunity board" desc="Illustrative sourcing signals — compare against your actual acquisition cost before buying."/><OpportunityTable rows={opportunities}/></section></>}
+    <footer><span>WorthIt • reseller market intelligence</span><span>Seeded / illustrative data • not live marketplace quotes</span></footer>
+    {selected&&<Modal d={selected} onClose={()=>setSelected(null)} range={range}/>} 
   </main>
 }
+function Kpi({label,value,note,up}){return <div className="kpi"><span>{label}</span><strong>{value} {up&&<b>↗</b>}</strong><small>{note}</small></div>}
+function PanelTitle({title,desc}){return <div className="panelTitle"><div><h2>{title}</h2><p>{desc}</p></div><button className="ghost">Export ↗</button></div>}
+function Trend({title,rows,margin}){return <section className="panel"><PanelTitle title={title} desc={margin?'Highest modeled gross ROI':'30-day market movement'}/><div className="trendList">{rows.map((d,i)=><div className="trendRow" key={d.name}><div className="rank">0{i+1}</div><div className="model"><strong>{d.name}</strong><small>{d.brand} • {d.category}</small></div><div className="price">{money(d.median)}</div><div className="mini"><Bar value={margin?d.roi:d.demand}/></div><b className={margin?'positive':d.d30<0?'negative':'positive'}>{margin?d.roi+'% ROI':movement(d.d30)}</b></div>)}</div></section>}
+function OpportunityTable({rows}){return <div className="table"><div className="thead"><span>ITEM</span><span>MARKET</span><span>BUY CEILING</span><span>LIST</span><span>GROSS</span><span>ROI</span><span>VELOCITY</span></div>{rows.map(d=><div className="tr" key={d.name}><span><strong>{d.name}</strong><small>{d.brand} • {d.category}</small></span><span>{money(d.median)}</span><span className="buy">{money(d.buy)}</span><span>{money(d.list)}</span><span>{money(d.margin)}</span><span className="positive">{d.roi}%</span><span><Bar value={d.sell}/>{d.sell}%</span></div>)}</div>}
+function Liquid({rows}){return <div className="table"><div className="thead"><span>MODEL</span><span>MEDIAN</span><span>SELL-THROUGH</span><span>DAYS</span><span>DEMAND</span><span>SUPPLY</span></div>{rows.map(d=><div className="tr" key={d.name}><span><strong>{d.name}</strong><small>{d.brand} • {d.category}</small></span><span>{money(d.median)}</span><span>{d.sell}%</span><span>{d.days}d</span><span><Bar value={d.demand}/>{d.demand}</span><span><Bar value={d.supply}/>{d.supply}</span></div>)}</div>}
+function Catalog({rows,onSelect}){return <div className="catalog">{rows.map(d=><button onClick={()=>onSelect(d)} key={d.name} className="card"><span className="icon">{d.category==='Phone'?'▣':d.category==='GPU'?'◈':d.category==='Console'?'◆':d.category==='Camera'?'◎':'◇'}</span><div><strong>{d.name}</strong><small>{d.brand} • {d.category}</small></div><b>{money(d.median)}</b><em className={d.d30>=0?'positive':'negative'}>{movement(d.d30)}</em></button>)}</div>}
+function Modal({d,onClose,range}){const points=[d.median*(1-d.d90/100),d.median*(1-d.d30/100),d.median*(1-d.d7/100),d.median]; return <div className="overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={onClose}>×</button><p className="eyebrow">{d.brand} • {d.category}</p><h2>{d.name}</h2><div className="bigPrice">{money(d.median)} <span>median resale</span></div><div className="chart"><div className="line">{points.map((p,i)=><span key={i} style={{left:`${i*33}%`,bottom:`${25+((p/Math.max(...points))*55)}%`}}/> )}</div><div className="chartLabels"><span>90D</span><span>30D</span><span>7D</span><span>NOW</span></div></div><div className="detailGrid"><Kpi label="BUY CEILING" value={money(d.buy)} note="Target acquisition"/><Kpi label="LIST PRICE" value={money(d.list)} note="Fair market target"/><Kpi label="GROSS MARGIN" value={money(d.margin)} note={`${d.roi}% modeled ROI`}/><Kpi label="TIME TO SELL" value={`${d.days}d`} note={`${d.sell}% sell-through`}/></div><div className="signals"><span>Demand <b>{d.demand}/100</b></span><span>Supply <b>{d.supply}/100</b></span><span>Volatility <b>{d.vol}%</b></span><span>30D <b className={d.d30>=0?'positive':'negative'}>{movement(d.d30)}</b></span></div><p className="note">Range selected: {range}. This MVP uses seeded illustrative observations. Production pricing should be calculated from timestamped comparable-sale observations from permitted marketplace/API sources.</p></div></div>}
