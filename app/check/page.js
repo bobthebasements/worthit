@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ArrowRight, Camera, Check, ChevronLeft, Database, Package, Sparkles, Tag, Upload, Zap } from 'lucide-react';
 
@@ -10,11 +10,6 @@ const conditions = [
   ['Like new', 'Barely used', 1.05],
   ['Good', 'Normal signs of use', 0.95],
   ['Fair', 'Visible wear', 0.75],
-];
-
-const fallbackBases = [
-  ['iphone', 330], ['switch', 190], ['playstation', 350], ['ps5', 350],
-  ['xbox', 280], ['airpods', 90], ['dunk', 75], ['nike', 75], ['macbook', 520],
 ];
 
 function CheckFlow() {
@@ -26,33 +21,19 @@ function CheckFlow() {
   const [charger, setCharger] = useState(true);
   const [market, setMarket] = useState(null);
   const [loadingMarket, setLoadingMarket] = useState(false);
-  const [marketError, setMarketError] = useState('');
 
   useEffect(() => {
     const value = params.get('item');
     if (value) setItem(value);
   }, [params]);
 
-  const fallbackEstimate = useMemo(() => {
-    const base = fallbackBases.find(([key]) => item.toLowerCase().includes(key))?.[1] ?? 120;
-    return Math.round(base * conditions[condition][2] * (charger ? 1 : 0.9) * (box ? 1 : 0.95));
-  }, [item, condition, box, charger]);
-
-  const estimate = market?.median ?? fallbackEstimate;
-  const low = market?.low ?? Math.max(15, Math.round(estimate * 0.9 / 5) * 5);
-  const high = market?.high ?? Math.round(estimate * 1.1 / 5) * 5;
-  const tradeIn = Math.round(estimate * 0.78 / 5) * 5;
-
   async function loadMarket() {
     setLoadingMarket(true);
-    setMarketError('');
     try {
       const response = await fetch(`/api/market?q=${encodeURIComponent(item)}`);
-      const data = await response.json();
-      if (data.source === 'ebay-live') setMarket(data);
-      else if (data.message) setMarketError(data.message);
+      setMarket(await response.json());
     } catch {
-      setMarketError('Live market data is unavailable right now.');
+      setMarket({ source: 'none', note: 'Live market data is unavailable right now.', sources: [] });
     } finally {
       setLoadingMarket(false);
     }
@@ -62,6 +43,12 @@ function CheckFlow() {
     setStep('result');
     loadMarket();
   }
+
+  const baseEstimate = market?.estimate ?? null;
+  const conditionAdjusted = baseEstimate ? Math.round(baseEstimate * conditions[condition][2] * (charger ? 1 : 0.9) * (box ? 1 : 0.95) / 5) * 5 : null;
+  const low = conditionAdjusted ? Math.max(5, Math.round(conditionAdjusted * 0.9 / 5) * 5) : null;
+  const high = conditionAdjusted ? Math.round(conditionAdjusted * 1.1 / 5) * 5 : null;
+  const tradeIn = conditionAdjusted ? Math.round(conditionAdjusted * 0.78 / 5) * 5 : null;
 
   return (
     <main className="app-shell clean-check">
@@ -77,14 +64,14 @@ function CheckFlow() {
           <div className="simple-heading">
             <div className="eyebrow"><Sparkles size={13} /> 1 · Identify</div>
             <h1>What are you selling?</h1>
-            <p>Tell us the item. We’ll check the market before giving you a number.</p>
+            <p>Tell us the item. We’ll compare real marketplace prices before giving you a number.</p>
           </div>
           <div className="simple-input-card">
             <div className="photo-button"><Camera size={22} /><div><b>Add a photo</b><span>Photo identification coming next</span></div><Upload size={17} /></div>
             <div className="or-line"><span>or</span></div>
             <div className="text-input"><Tag size={18} /><input autoFocus value={item} onChange={e => setItem(e.target.value)} onKeyDown={e => e.key === 'Enter' && item.trim() && setStep('condition')} placeholder="e.g. Nintendo Switch OLED white" /><button disabled={!item.trim()} onClick={() => setStep('condition')}><ArrowRight size={18} /></button></div>
           </div>
-          <div className="small-trust"><span>UK market</span><span>No account</span><span>~30 seconds</span></div>
+          <div className="small-trust"><span>UK market</span><span>Multiple platforms</span><span>No account</span></div>
         </section>
       )}
 
@@ -94,7 +81,7 @@ function CheckFlow() {
           <div className="simple-heading left">
             <div className="eyebrow">2 · Condition</div>
             <h1>How is it?</h1>
-            <p>Be honest. Condition changes what buyers will actually pay.</p>
+            <p>Condition changes what buyers will actually pay.</p>
           </div>
           <div className="condition-list">
             {conditions.map((entry, index) => (
@@ -115,16 +102,29 @@ function CheckFlow() {
       {step === 'result' && (
         <section className="simple-results">
           <div className="result-top"><button className="back-link" onClick={() => setStep('condition')}><ChevronLeft size={16} /> Change details</button><Link href="/check" className="new-check">New check</Link></div>
-          <div className="result-heading"><span className="eyebrow"><Database size={13} /> Live market check</span><h1>{item}</h1><p>{market ? `Compared with ${market.listingCount} current eBay UK listings.` : loadingMarket ? 'Checking current eBay UK listings…' : 'Your live market connection is not configured yet.'}</p></div>
+          <div className="result-heading"><span className="eyebrow"><Database size={13} /> Multi-market check</span><h1>{item}</h1><p>{loadingMarket ? 'Checking eBay, Vinted and Facebook Marketplace…' : market?.liveSourceCount ? `Compared with live prices from ${market.liveSourceCount} marketplace${market.liveSourceCount === 1 ? '' : 's'}.` : 'No live marketplace connection is available yet.'}</p></div>
 
           <div className="main-value">
-            <div><small>ESTIMATED RESALE</small><strong>£{estimate}</strong><span>Likely range £{low}–£{high}</span></div>
-            <div className="data-status">{market ? <><Check size={15} /> Live eBay UK data</> : loadingMarket ? 'Loading…' : 'Modelled estimate'}</div>
+            <div><small>ESTIMATED RESALE</small><strong>{conditionAdjusted ? `£${conditionAdjusted}` : '—'}</strong><span>{low && high ? `Likely range £${low}–£${high}` : 'Waiting for live market data'}</span></div>
+            <div className="data-status">{loadingMarket ? 'Loading…' : market?.liveSourceCount ? <><Check size={15} /> Multi-market data</> : 'No live data'}</div>
           </div>
 
           <div className="market-source">
-            <div><b>Where this number comes from</b><p>{market?.note || marketError || 'WorthIt can use live marketplace listings instead of pretending a fixed price is current.'}</p></div>
-            <span>{market ? 'LIVE' : 'SETUP NEEDED'}</span>
+            <div><b>Real market sources</b><p>{market?.note || 'WorthIt only shows a price when it has connected marketplace data.'}</p></div>
+            <span>{market?.liveSourceCount ? `${market.liveSourceCount}/3 LIVE` : '0/3 LIVE'}</span>
+          </div>
+
+          <div className="market-sources-grid">
+            {(market?.sources || [
+              { name: 'eBay', status: 'unavailable', note: 'Not connected yet.' },
+              { name: 'Vinted', status: 'unavailable', note: 'Provider connection needed.' },
+              { name: 'Facebook Marketplace', status: 'unavailable', note: 'Provider connection needed.' },
+            ]).map(source => (
+              <div className="market-source-card" key={source.name}>
+                <div><b>{source.name}</b><span className={source.status === 'live' ? 'live-dot' : ''}>{source.status === 'live' ? 'LIVE' : 'NOT CONNECTED'}</span></div>
+                {source.status === 'live' ? <><strong>£{source.median}</strong><small>{source.count} listings · £{source.low}–£{source.high}</small></> : <small>{source.note}</small>}
+              </div>
+            ))}
           </div>
 
           <div className="simple-breakdown">
@@ -133,15 +133,15 @@ function CheckFlow() {
             <div><span>Charger</span><b>{charger ? 'Included' : 'Missing'}</b></div>
           </div>
 
-          <div className="sell-choice">
+          {conditionAdjusted && <div className="sell-choice">
             <div><small>WHAT NEXT?</small><h2>Choose your route</h2></div>
             <div className="route-options">
               <div><b>Sell yourself</b><strong>£{high}</strong><span>More return, more work</span><button>See selling options <ArrowRight size={16} /></button></div>
               <div><b>Trade in</b><strong>£{tradeIn}</strong><span>Less hassle, indicative value</span><button>Compare trade-in <ArrowRight size={16} /></button></div>
             </div>
-          </div>
+          </div>}
 
-          <div className="data-note"><Database size={16} /><span>WorthIt is being built around platform data, not made-up marketplace prices. eBay’s public Browse API provides current listings; completed-sale data is available through eBay’s restricted Marketplace Insights API, so WorthIt will use that when access is approved.</span></div>
+          <div className="data-note"><Database size={16} /><span>WorthIt never fills missing platforms with guessed prices. eBay has an official Browse API for current listings. Vinted's official integration is restricted to allowlisted Pro businesses, and Meta does not provide a general public Marketplace listings API, so those sources need an approved or compliant third-party data connection.</span></div>
           <footer>WorthIt · UK resale estimates · Indicative values, not guaranteed offers.</footer>
         </section>
       )}
