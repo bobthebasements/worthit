@@ -3,11 +3,16 @@ import Groq from 'groq-sdk';
 
 export const runtime = 'nodejs';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
 export async function POST(request) {
+  // Groq is an enhancement, not a hard dependency for the valuation flow.
+  // If the key is missing, return a successful fallback response so the UI can
+  // continue to the manual item name / condition flow instead of a 503.
   if (!process.env.GROQ_API_KEY) {
-    return NextResponse.json({ error: 'Groq AI is not configured. Add GROQ_API_KEY in Vercel.' }, { status: 503 });
+    return NextResponse.json({
+      aiAvailable: false,
+      fallback: true,
+      message: 'AI identification is unavailable. Please enter the item name manually.',
+    });
   }
 
   try {
@@ -27,6 +32,7 @@ export async function POST(request) {
 
     const bytes = Buffer.from(await file.arrayBuffer());
     const imageUrl = `data:${file.type};base64,${bytes.toString('base64')}`;
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
     const completion = await groq.chat.completions.create({
       model: 'qwen/qwen3.8-27b',
@@ -72,12 +78,18 @@ Use "unknown" or an empty string when you cannot establish something. Give 2-4 u
     const parsed = JSON.parse(content);
 
     return NextResponse.json({
+      aiAvailable: true,
       ...parsed,
       searchQueries: Array.isArray(parsed.searchQueries) ? parsed.searchQueries.slice(0, 4) : [],
       accessories: Array.isArray(parsed.accessories) ? parsed.accessories : [],
     });
   } catch (error) {
     console.error('Groq identification error:', error);
-    return NextResponse.json({ error: 'The image could not be identified. Try a clearer photo.' }, { status: 500 });
+    // Do not turn a transient AI/provider failure into a broken valuation flow.
+    return NextResponse.json({
+      aiAvailable: false,
+      fallback: true,
+      message: 'AI identification is temporarily unavailable. Please enter the item name manually.',
+    });
   }
 }
