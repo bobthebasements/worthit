@@ -3,23 +3,152 @@
 import Link from 'next/link';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ArrowRight, Camera, Check, ChevronLeft, Package, ShieldCheck, Sparkles, Tag, TrendingUp, Upload, Zap } from 'lucide-react';
+import { ArrowRight, Camera, Check, ChevronLeft, Database, Package, Sparkles, Tag, Upload, Zap } from 'lucide-react';
 
-const conditions=[['New','Unused, sealed or never worn',1.15],['Like new','Barely used, excellent condition',1.05],['Good','Normal signs of use, fully working',0.95],['Fair','Noticeable wear or cosmetic damage',0.75]];
-const bases=[['iphone',330],['switch',190],['playstation',350],['ps5',350],['xbox',280],['airpods',90],['dunk',75],['nike',75],['macbook',520]];
+const conditions = [
+  ['New', 'Unused or sealed', 1.15],
+  ['Like new', 'Barely used', 1.05],
+  ['Good', 'Normal signs of use', 0.95],
+  ['Fair', 'Visible wear', 0.75],
+];
 
-function CheckFlow(){
- const params=useSearchParams(); const [step,setStep]=useState('identify'); const [item,setItem]=useState(''); const [condition,setCondition]=useState(2); const [box,setBox]=useState(true); const [charger,setCharger]=useState(true); const [paid,setPaid]=useState(''); const [mode,setMode]=useState('sell');
- useEffect(()=>{const v=params.get('item');if(v)setItem(v)},[params]);
- const base=useMemo(()=>{const t=item.toLowerCase();return bases.find(([k])=>t.includes(k))?.[1]??120},[item]);
- const estimate=Math.round(base*conditions[condition][2]*(charger?1:.9)*(box?1:.95)); const low=Math.max(15,Math.round(estimate*.9/5)*5); const high=Math.round(estimate*1.1/5)*5; const tradeIn=Math.round(estimate*.78/5)*5; const profit=paid?Math.max(0,estimate-Number(paid)):null;
- const next=()=>item.trim()&&setStep('condition');
- return <main className="app-shell">
-  <div className="app-top"><Link href="/" className="logo">Worth<span>It</span></Link><div className="step-track"><i className={step==='identify'?'active':''}/><i className={step==='condition'?'active':''}/><i className={step==='result'?'active':''}/></div><Link href="/" className="exit">Exit</Link></div>
-  {step==='identify'&&<section className="smooth-wizard"><div className="wizard-back"><Link href="/"><ChevronLeft size={17}/> Back</Link><span>Step 1 of 3</span></div><div className="wizard-hero"><div className="wizard-icon"><Camera/></div><div className="eyebrow"><Sparkles size={13}/> Quick valuation</div><h1>What are we valuing?</h1><p>Start with a photo or describe your item. You can refine everything before we calculate the value.</p></div><div className="input-panel"><div className="drop" onClick={()=>document.getElementById('file').click()}><Upload size={29}/><b>Drop photos here</b><span>or click to browse · up to 4 photos</span><input id="file" type="file" accept="image/*" multiple hidden onChange={()=>setStep('condition')}/></div><div className="or"><i/>OR<i/></div><div className="describe"><Tag size={19}/><input autoFocus value={item} onChange={e=>setItem(e.target.value)} onKeyDown={e=>e.key==='Enter'&&next()} placeholder="e.g. Nintendo Switch OLED white"/><button disabled={!item.trim()} onClick={next}>Continue <ArrowRight size={17}/></button></div></div><div className="micro-trust"><span>✓ UK market</span><span>✓ No account required</span><span>✓ Takes about 30 seconds</span></div></section>}
-  {step==='condition'&&<section className="smooth-wizard condition-wizard"><div className="wizard-back"><button onClick={()=>setStep('identify')}><ChevronLeft size={17}/> Back</button><span>Step 2 of 3</span></div><div className="identified"><div className="mini-photo">📦</div><div><small>YOUR ITEM</small><b>{item||'Your item'}</b><span>Ready for condition check</span></div><button onClick={()=>setStep('identify')}>Edit</button></div><div className="wizard-hero compact"><div className="eyebrow">02 · Condition</div><h1>How would you describe it?</h1><p>Condition has a big effect on resale value, so be honest here.</p></div><div className="condition-grid">{conditions.map((c,i)=><button key={c[0]} className={condition===i?'selected':''} onClick={()=>setCondition(i)}><span className="radio">{condition===i&&<Check size={13}/>}</span><div><b>{c[0]}</b><small>{c[1]}</small></div></button>)}</div><h2 className="extras-title">What comes with it?</h2><div className="toggles"><button onClick={()=>setBox(!box)} className={box?'active':''}><Package/> Original box <span>{box?'Yes':'No'}</span></button><button onClick={()=>setCharger(!charger)} className={charger?'active':''}><Zap/> Charger / essentials <span>{charger?'Yes':'No'}</span></button></div><button className="primary full" onClick={()=>setStep('result')}>Show my value <ArrowRight/></button></section>}
-  {step==='result'&&<section className="results-page"><div className="result-nav"><button onClick={()=>setStep('condition')}><ChevronLeft size={16}/> Back</button><Link href="/check" className="new-check">+ New check</Link></div><div className="result-intro"><div className="eyebrow"><Sparkles size={14}/> Your WorthIt estimate</div><h1>{item||'Your item'}</h1><p>Here’s your estimated UK resale value. Now choose between maximising your return or taking the convenience of trade-in.</p></div><div className="decision-grid"><div className="value-card"><div className="card-label">ESTIMATED PRIVATE-SALE VALUE</div><div className="big-price">£{estimate}</div><div className="range">Likely selling range <b>£{low}–£{high}</b></div><div className="price-bars"><div><span>Quick sale</span><b>£{low}</b></div><div className="featured"><span>Typical</span><b>£{estimate}</b></div><div><span>Patient</span><b>£{high}</b></div></div><div className="affects"><b>What affected this estimate</b><span>✓ {conditions[condition][0]} condition</span><span>{box?'✓':'×'} Original box</span><span>{charger?'✓':'×'} Charger / essentials</span></div></div><div className="trade-card"><div className="trade-top"><div><small>EASIER ROUTE</small><h2>Trade it in</h2></div><ShieldCheck/></div><p>Skip photos, messages and waiting. A trade-in is usually worth less, in exchange for convenience.</p><div className="trade-price">£{tradeIn}<span>indicative trade-in value</span></div><button className="trade-button" onClick={()=>setMode('trade')}>{mode==='trade'?'Trade-in selected':'Compare trade-in'} <ArrowRight/></button></div></div><div className="choice-banner"><div><small>YOUR TWO OPTIONS</small><h2>How do you want to sell?</h2></div><div className="choice-buttons"><button className={mode==='sell'?'active':''} onClick={()=>setMode('sell')}><TrendingUp/><span><b>Sell myself</b><small>More potential return</small></span><ArrowRight/></button><button className={mode==='trade'?'active':''} onClick={()=>setMode('trade')}><ShieldCheck/><span><b>Trade it in</b><small>Less hassle</small></span><ArrowRight/></button></div></div><section className="sell-section"><div className="sell-head"><div><small>{mode==='trade'?'TRADE-IN':'MAXIMISE YOUR RETURN'}</small><h2>{mode==='trade'?'Trade-in route':'Sell it yourself'}</h2></div><div className="mode-switch"><button className={mode==='sell'?'active':''} onClick={()=>setMode('sell')}>Resale</button><button className={mode==='trade'?'active':''} onClick={()=>setMode('trade')}>Trade-in</button></div></div><div className="market-grid"><div><b>eBay</b><span>£{estimate}–£{high}</span><small>Largest buyer pool</small></div><div><b>Vinted</b><span>£{Math.round(estimate*.9/5)*5}–£{Math.round(high*.95/5)*5}</span><small>Low-friction selling</small></div><div><b>Facebook Marketplace</b><span>£{Math.round(low*.95/5)*5}–£{estimate}</span><small>Local collection</small></div></div><div className="listing"><div><div className="listing-icon"><TrendingUp/></div><div><b>Ready to sell?</b><p>Generate a copy-ready listing around <strong>£{Math.round(high*.97/5)*5}</strong>.</p></div></div><button className="outline">Generate listing <ArrowRight/></button></div></section><section className="profit"><div><small>RESELLER TOOL</small><h2>Profit calculator</h2><p>Enter what you paid to estimate your margin before marketplace fees.</p></div><div className="profit-input"><label>I paid</label><div>£<input type="number" min="0" value={paid} onChange={e=>setPaid(e.target.value)} placeholder="120"/></div></div><div className="profit-result"><small>EST. PROFIT</small><b>{profit===null?'£—':`£${profit}`}</b></div></section><footer>WorthIt · UK resale estimates · Indicative values, not guaranteed offers.</footer></section>}
- </main>;
+const fallbackBases = [
+  ['iphone', 330], ['switch', 190], ['playstation', 350], ['ps5', 350],
+  ['xbox', 280], ['airpods', 90], ['dunk', 75], ['nike', 75], ['macbook', 520],
+];
+
+function CheckFlow() {
+  const params = useSearchParams();
+  const [step, setStep] = useState('identify');
+  const [item, setItem] = useState('');
+  const [condition, setCondition] = useState(2);
+  const [box, setBox] = useState(true);
+  const [charger, setCharger] = useState(true);
+  const [market, setMarket] = useState(null);
+  const [loadingMarket, setLoadingMarket] = useState(false);
+  const [marketError, setMarketError] = useState('');
+
+  useEffect(() => {
+    const value = params.get('item');
+    if (value) setItem(value);
+  }, [params]);
+
+  const fallbackEstimate = useMemo(() => {
+    const base = fallbackBases.find(([key]) => item.toLowerCase().includes(key))?.[1] ?? 120;
+    return Math.round(base * conditions[condition][2] * (charger ? 1 : 0.9) * (box ? 1 : 0.95));
+  }, [item, condition, box, charger]);
+
+  const estimate = market?.median ?? fallbackEstimate;
+  const low = market?.low ?? Math.max(15, Math.round(estimate * 0.9 / 5) * 5);
+  const high = market?.high ?? Math.round(estimate * 1.1 / 5) * 5;
+  const tradeIn = Math.round(estimate * 0.78 / 5) * 5;
+
+  async function loadMarket() {
+    setLoadingMarket(true);
+    setMarketError('');
+    try {
+      const response = await fetch(`/api/market?q=${encodeURIComponent(item)}`);
+      const data = await response.json();
+      if (data.source === 'ebay-live') setMarket(data);
+      else if (data.message) setMarketError(data.message);
+    } catch {
+      setMarketError('Live market data is unavailable right now.');
+    } finally {
+      setLoadingMarket(false);
+    }
+  }
+
+  function showResult() {
+    setStep('result');
+    loadMarket();
+  }
+
+  return (
+    <main className="app-shell clean-check">
+      <div className="app-top">
+        <Link href="/" className="logo">Worth<span>It</span></Link>
+        <div className="simple-progress"><span className={step !== 'identify' ? 'done' : 'active'} /><span className={step === 'result' ? 'done' : step === 'condition' ? 'active' : ''} /><span className={step === 'result' ? 'active' : ''} /></div>
+        <Link href="/" className="exit">Exit</Link>
+      </div>
+
+      {step === 'identify' && (
+        <section className="simple-flow">
+          <button className="back-link" onClick={() => window.history.back()}><ChevronLeft size={16} /> Back</button>
+          <div className="simple-heading">
+            <div className="eyebrow"><Sparkles size={13} /> 1 · Identify</div>
+            <h1>What are you selling?</h1>
+            <p>Tell us the item. We’ll check the market before giving you a number.</p>
+          </div>
+          <div className="simple-input-card">
+            <div className="photo-button"><Camera size={22} /><div><b>Add a photo</b><span>Photo identification coming next</span></div><Upload size={17} /></div>
+            <div className="or-line"><span>or</span></div>
+            <div className="text-input"><Tag size={18} /><input autoFocus value={item} onChange={e => setItem(e.target.value)} onKeyDown={e => e.key === 'Enter' && item.trim() && setStep('condition')} placeholder="e.g. Nintendo Switch OLED white" /><button disabled={!item.trim()} onClick={() => setStep('condition')}><ArrowRight size={18} /></button></div>
+          </div>
+          <div className="small-trust"><span>UK market</span><span>No account</span><span>~30 seconds</span></div>
+        </section>
+      )}
+
+      {step === 'condition' && (
+        <section className="simple-flow">
+          <button className="back-link" onClick={() => setStep('identify')}><ChevronLeft size={16} /> Back</button>
+          <div className="simple-heading left">
+            <div className="eyebrow">2 · Condition</div>
+            <h1>How is it?</h1>
+            <p>Be honest. Condition changes what buyers will actually pay.</p>
+          </div>
+          <div className="condition-list">
+            {conditions.map((entry, index) => (
+              <button key={entry[0]} className={condition === index ? 'selected' : ''} onClick={() => setCondition(index)}>
+                <span className="condition-radio">{condition === index && <Check size={12} />}</span>
+                <span><b>{entry[0]}</b><small>{entry[1]}</small></span>
+              </button>
+            ))}
+          </div>
+          <div className="extras-row">
+            <button className={box ? 'on' : ''} onClick={() => setBox(!box)}><Package size={17} /> Box <span>{box ? 'Yes' : 'No'}</span></button>
+            <button className={charger ? 'on' : ''} onClick={() => setCharger(!charger)}><Zap size={17} /> Charger <span>{charger ? 'Yes' : 'No'}</span></button>
+          </div>
+          <button className="big-continue" onClick={showResult}>Check real market <ArrowRight size={18} /></button>
+        </section>
+      )}
+
+      {step === 'result' && (
+        <section className="simple-results">
+          <div className="result-top"><button className="back-link" onClick={() => setStep('condition')}><ChevronLeft size={16} /> Change details</button><Link href="/check" className="new-check">New check</Link></div>
+          <div className="result-heading"><span className="eyebrow"><Database size={13} /> Live market check</span><h1>{item}</h1><p>{market ? `Compared with ${market.listingCount} current eBay UK listings.` : loadingMarket ? 'Checking current eBay UK listings…' : 'Your live market connection is not configured yet.'}</p></div>
+
+          <div className="main-value">
+            <div><small>ESTIMATED RESALE</small><strong>£{estimate}</strong><span>Likely range £{low}–£{high}</span></div>
+            <div className="data-status">{market ? <><Check size={15} /> Live eBay UK data</> : loadingMarket ? 'Loading…' : 'Modelled estimate'}</div>
+          </div>
+
+          <div className="market-source">
+            <div><b>Where this number comes from</b><p>{market?.note || marketError || 'WorthIt can use live marketplace listings instead of pretending a fixed price is current.'}</p></div>
+            <span>{market ? 'LIVE' : 'SETUP NEEDED'}</span>
+          </div>
+
+          <div className="simple-breakdown">
+            <div><span>Condition</span><b>{conditions[condition][0]}</b></div>
+            <div><span>Original box</span><b>{box ? 'Included' : 'Missing'}</b></div>
+            <div><span>Charger</span><b>{charger ? 'Included' : 'Missing'}</b></div>
+          </div>
+
+          <div className="sell-choice">
+            <div><small>WHAT NEXT?</small><h2>Choose your route</h2></div>
+            <div className="route-options">
+              <div><b>Sell yourself</b><strong>£{high}</strong><span>More return, more work</span><button>See selling options <ArrowRight size={16} /></button></div>
+              <div><b>Trade in</b><strong>£{tradeIn}</strong><span>Less hassle, indicative value</span><button>Compare trade-in <ArrowRight size={16} /></button></div>
+            </div>
+          </div>
+
+          <div className="data-note"><Database size={16} /><span>WorthIt is being built around platform data, not made-up marketplace prices. eBay’s public Browse API provides current listings; completed-sale data is available through eBay’s restricted Marketplace Insights API, so WorthIt will use that when access is approved.</span></div>
+          <footer>WorthIt · UK resale estimates · Indicative values, not guaranteed offers.</footer>
+        </section>
+      )}
+    </main>
+  );
 }
 
-export default function CheckPage(){return <Suspense fallback={<main className="app-shell"><div className="app-top"><Link href="/" className="logo">Worth<span>It</span></Link></div><section className="smooth-wizard"><div className="wizard-hero"><div className="eyebrow"><Sparkles size={13}/> Quick valuation</div><h1>Loading your valuation…</h1><p>Getting the WorthIt checker ready.</p></div></section></main>}><CheckFlow/></Suspense>}
+export default function CheckPage() {
+  return <Suspense fallback={<main className="app-shell clean-check"><div className="app-top"><Link href="/" className="logo">Worth<span>It</span></Link></div></main>}><CheckFlow /></Suspense>;
+}
